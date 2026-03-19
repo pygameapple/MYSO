@@ -44,10 +44,10 @@ text-align:center;
 
 }
 
-/* enlarged fonts */
+/* 🔥 enlarged fonts */
 
 #startScreen h1{
-font-size:40px;
+font-size:60px;
 }
 
 #startScreen p{
@@ -68,8 +68,7 @@ font-size:28px;
 border:none;
 border-radius:12px;
 
-/* semi-transparent buttons */
-background: rgba(255, 255, 255, 0.6);
+background:white;
 
 }
 
@@ -106,6 +105,6 @@ font-size:30px;
 
 .control:active{
 
-background: rgba(221, 221, 221, 0.8);
+background:#ddd;
 
 }
