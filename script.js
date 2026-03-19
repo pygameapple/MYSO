@@ -34,9 +34,8 @@ let shootDir={x:0,y:-1}
 
 let score=0
 
-/* ✅ HIGH SCORE PERSISTENCE */
-let highScore = localStorage.getItem("highScore") || 0
-highScore = Number(highScore)
+/* ✅ FIXED HIGH SCORE (GitHub-safe) */
+let highScore = Number(localStorage.getItem("highScore") || 0)
 
 let gameOver=false
 let started=false
@@ -46,10 +45,10 @@ let keys={}
 /* IMAGES */
 
 const fireImg = new Image()
-fireImg.src="images/asteroid.png"
+fireImg.src="asteroid.png"
 
 const shipImg = new Image()
-shipImg.src="images/ship.png"
+shipImg.src="ship.png"
 
 /* START */
 
@@ -253,10 +252,10 @@ if(Math.hypot(ship.x-f.x,ship.y-f.y)<f.size){
 
 gameOver=true
 
-/* ✅ SAVE HIGH SCORE */
+/* ✅ SAVE HIGH SCORE ONLY HERE */
 if(score > highScore){
 highScore = score
-localStorage.setItem("highScore", highScore)
+localStorage.setItem("highScore", String(highScore))
 }
 
 }
@@ -298,7 +297,7 @@ shipSize,
 shipSize
 )
 
-/* water bullets */
+/* bullets */
 
 bullets.forEach(b=>{
 ctx.fillStyle="#00BFFF"
