@@ -1,22 +1,13 @@
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 
-/* CANVAS */
+/* RESIZE */
 function resizeCanvas(){
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
 }
 resizeCanvas()
-window.addEventListener("resize",resizeCanvas)
-
-/* STOP PHONE ZOOM */
-document.addEventListener("dblclick", e => e.preventDefault())
-document.addEventListener("touchmove", e => {
-    if(e.scale !== 1) e.preventDefault()
-}, {passive:false})
-
-/* CONSTANTS */
-const BORDER = 20
+window.addEventListener("resize", resizeCanvas)
 
 /* GAME STATE */
 let ship = {x:0,y:0,speed:6}
@@ -28,7 +19,7 @@ let gameOver = false
 let started = false
 let keys = {}
 
-/* TRACK LAST DIRECTION */
+/* TRACK DIRECTION */
 let lastDir = {x:0, y:-1}
 
 /* BUTTONS */
@@ -42,6 +33,7 @@ const shoot = document.getElementById("shoot")
 const fireImg = new Image()
 fireImg.src="images/asteroid.png"
 
+/* NEW SHIP IMAGES */
 const shipLeft = new Image()
 shipLeft.src = "images/IfMisoGoesLeft.png"
 
@@ -80,10 +72,10 @@ bind(shoot, " ")
 function spawnFire(size=50){
     let x,y
     do{
-        x = BORDER + Math.random()*(canvas.width-BORDER*2)
-        y = BORDER + Math.random()*(canvas.height-BORDER*2)
+        x = Math.random()*canvas.width
+        y = Math.random()*canvas.height
     }while(Math.hypot(x-ship.x, y-ship.y) < 150)
-    
+
     fires.push({
         x:x,
         y:y,
@@ -100,8 +92,10 @@ function resetGame(){
     bullets = []
     fires = []
     score = 0
+    highScore = 0
     gameOver = false
-    for(let i=0; i<3; i++) spawnFire()
+
+    for(let i=0;i<3;i++) spawnFire()
 }
 
 /* UPDATE */
@@ -110,9 +104,9 @@ let fireTimer = 0
 function update(){
     if(!started || gameOver) return
 
-    const shipSize = Math.min(canvas.width, canvas.height)/3
+    const shipSize = Math.min(canvas.width, canvas.height)/5
 
-    /* MOVEMENT + LAST DIRECTION */
+    /* MOVEMENT + DIRECTION TRACKING */
     if(keys["ArrowLeft"]){
         ship.x -= ship.speed
         lastDir = {x:-1, y:0}
@@ -130,10 +124,10 @@ function update(){
         lastDir = {x:0, y:1}
     }
 
-    ship.x = Math.max(BORDER+shipSize/2, Math.min(canvas.width-BORDER-shipSize/2, ship.x))
-    ship.y = Math.max(BORDER+shipSize/2, Math.min(canvas.height-BORDER-shipSize/2, ship.y))
+    ship.x = Math.max(20, Math.min(canvas.width-20, ship.x))
+    ship.y = Math.max(20, Math.min(canvas.height-20, ship.y))
 
-    /* SHOOTING (same direction as facing) */
+    /* SHOOT (NOW USES LAST DIRECTION) */
     if(keys[" "]){
         bullets.push({
             x: ship.x,
@@ -144,7 +138,7 @@ function update(){
         keys[" "] = false
     }
 
-    /* BULLETS */
+    /* BULLETS MOVE */
     bullets.forEach(b=>{
         b.x += b.dx
         b.y += b.dy
@@ -155,123 +149,91 @@ function update(){
         b.y > 0 && b.y < canvas.height
     )
 
-    /* SPAWN FIRES */
+    /* SPAWN FIRE */
     fireTimer++
     if(fireTimer>120){
         spawnFire()
         fireTimer = 0
     }
 
-    /* FIRE MOVEMENT */
+    /* FIRE MOVE */
     fires.forEach(f=>{
         f.x += f.dx
         f.y += f.dy
-
-        if(f.x - f.size < BORDER){
-            f.x = BORDER + f.size
-            f.dx = Math.abs(f.dx)
-        }
-        if(f.x + f.size > canvas.width - BORDER){
-            f.x = canvas.width - BORDER - f.size
-            f.dx = -Math.abs(f.dx)
-        }
-        if(f.y - f.size < BORDER){
-            f.y = BORDER + f.size
-            f.dy = Math.abs(f.dy)
-        }
-        if(f.y + f.size > canvas.height - BORDER){
-            f.y = canvas.height - BORDER - f.size
-            f.dy = -Math.abs(f.dy)
-        }
     })
 
-    checkCollisions()
-}
-
-/* COLLISIONS */
-function checkCollisions(){
+    /* COLLISIONS (bullets vs fire) */
     bullets.forEach((b, bi)=>{
         fires.forEach((f, fi)=>{
             if(Math.hypot(b.x-f.x, b.y-f.y) < f.size){
                 score += 10
                 bullets.splice(bi, 1)
-                if(f.size > 28){
-                    for(let i=0; i<2; i++){
-                        fires.push({
-                            x:f.x,
-                            y:f.y,
-                            dx:(Math.random()-0.5)*3,
-                            dy:(Math.random()-0.5)*3,
-                            size:f.size/2
-                        })
-                    }
-                }
-                fires.splice(fi,1)
+                fires.splice(fi, 1)
+                spawnFire()
             }
         })
     })
 
+    /* PLAYER COLLISION */
     fires.forEach(f=>{
         if(Math.hypot(ship.x-f.x, ship.y-f.y) < f.size){
             gameOver = true
-            if(score>highScore) highScore = score
+            if(score > highScore) highScore = score
         }
     })
 }
 
-/* DRAW BACKGROUND */
-function drawBackground(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = "#2E7D32"
-    ctx.fillRect(0,0,canvas.width,canvas.height)
-    ctx.fillStyle = "#4CAF50"
-    ctx.fillRect(BORDER, BORDER, canvas.width-BORDER*2, canvas.height-BORDER*2)
-}
-
 /* DRAW */
 function draw(){
-    drawBackground()
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    const shipSize = Math.min(canvas.width, canvas.height)/3
+    /* BACKGROUND */
+    ctx.fillStyle = "#2E7D32"
+    ctx.fillRect(0,0,canvas.width,canvas.height)
 
+    ctx.fillStyle = "#4CAF50"
+    ctx.fillRect(20,20,canvas.width-40,canvas.height-40)
+
+    const shipSize = Math.min(canvas.width, canvas.height)/5
+
+    /* CHOOSE SHIP IMAGE BASED ON DIRECTION */
     let currentShip = shipUpDown
+
     if(lastDir.x === -1) currentShip = shipLeft
     else if(lastDir.x === 1) currentShip = shipRight
-    else currentShip = shipUpDown
 
     ctx.drawImage(
         currentShip,
-        ship.x - shipSize/2,
-        ship.y - shipSize/2,
+        ship.x-shipSize/2,
+        ship.y-shipSize/2,
         shipSize,
         shipSize
     )
 
+    /* BULLETS */
+    ctx.fillStyle="#00BFFF"
     bullets.forEach(b=>{
-        ctx.fillStyle="#00BFFF"
-        ctx.fillRect(b.x-6, b.y-10, 12, 20)
+        ctx.fillRect(b.x-5,b.y-5,10,10)
     })
 
+    /* FIRES */
     fires.forEach(f=>{
-        ctx.drawImage(
-            fireImg,
-            f.x-f.size,
-            f.y-f.size,
-            f.size*2,
-            f.size*2
-        )
+        ctx.drawImage(fireImg,f.x-f.size,f.y-f.size,f.size*2,f.size*2)
     })
 
+    /* SCORE */
     ctx.fillStyle="white"
     ctx.font="20px monospace"
-    ctx.fillText("Score: "+score,20,35)
+    ctx.fillText("Score: "+score,20,30)
     ctx.fillText("Highscore: "+highScore,20,60)
 
+    /* GAME OVER */
     if(gameOver){
         ctx.font="40px monospace"
         ctx.fillText("GAME OVER", canvas.width/2-120, canvas.height/2)
+
         ctx.font="20px monospace"
-        ctx.fillText("Tap to restart", canvas.width/2-80, canvas.height/2+40)
+        ctx.fillText("Tap to restart", canvas.width/2-90, canvas.height/2+40)
     }
 }
 
